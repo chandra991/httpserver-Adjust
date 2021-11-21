@@ -1,0 +1,31 @@
+---
+# tasks file for httpserver
+- name: Directory creation
+  file:
+    path: /opt/build
+    state: directory
+
+- name: Active ingress minikube
+  command: minikube addons enable ingress
+
+- name: Download the support code from the GitRepo
+  become: yes
+  git:
+     repo: 'https://github.com/shadrachdoc/httpserver.git'
+     dest: /opt/build/
+     update: yes
+     force: yes
+
+- name: Build docker image 
+  shell: docker build -t httpserver:0.0.5 /opt/build/.
+
+- name: K8s deployment and service creation is progressing
+  become: false
+  command: "{{ item }}"
+  loop:
+     - minikube kubectl -- apply -f /opt/build/http_server-deployment.yaml
+     - minikube kubectl -- apply -f /opt/build/http_server-service.yaml
+     - minikube kubectl -- apply -f /opt/build/ingress.yaml  
+     - minikube kubectl -- get deployments
+     - minikube kubectl -- get services
+     - minikube kubectl -- get ingress
